@@ -1,5 +1,15 @@
 from PIL import Image, ImageDraw
 import numpy as np
+import logging
+
+
+fh_debug = logging.FileHandler("debug.log")
+fh_debug.setLevel(logging.DEBUG)
+fmt_fh = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+fh_debug.setFormatter(fmt_fh)
+logger = logging.getLogger('find_by_color')
+logger.setLevel(logging.DEBUG)
+logger.addHandler(fh_debug)
 
 
 class ColorSelector(object):
@@ -8,8 +18,9 @@ class ColorSelector(object):
     def __init__(self, img_path, chosen_h, chosen_s):
         self.img_path = img_path
         self.chosen_h = chosen_h / 360 * 2 * np.pi
-
         self.img0 = Image.open(self.img_path).convert(mode="HSV")
+        logger.debug(f"image size {self.img0.size}")
+
         self.img = self.img0.resize((128, int(128 * self.img0.height / self.img0.width)))
         self.height_ratio = self.img0.height / self.img.height
         self.width_ratio = self.img0.width / self.img.width
@@ -94,12 +105,9 @@ class AGNES(object):
             Cs[i_star] = np.vstack((Cs[i_star], Cs[j_star]))
             Cs.pop(j_star)
 
-            for j in range(M.shape[0]):
-                if i_star != j:
-                    M[i_star, j] = min([M[i_star, j], M[j_star, j]])
-                    M[j, i_star] = M[i_star, j]
-                else:
-                    M[i_star, j] = np.inf
+            M[i_star] = np.vstack((M[i_star], M[j_star])).min(axis=0)
+            M[:, i_star] = M[i_star]
+            M[i_star, i_star] = np.inf
 
             M = np.delete(M, j_star, axis=0)
             M = np.delete(M, j_star, axis=1)
@@ -142,19 +150,21 @@ class AGNES(object):
 
 if __name__ == "__main__":
     img_path = "img/IMG_7270.jpg"
-    # cs = ColorSelector(img_path, 8, 63)
+    cs = ColorSelector(img_path, 8, 63)
     # cs = ColorSelector(img_path, 0, 80)
 
-    for H in range(360):
-        for S in range(100):
-            cs = ColorSelector(img_path, H, S)
-            cs.get_color_mask()
-            cs.get_contour()
+    # for H in range(360):
+        # for S in range(100):
+            # cs = ColorSelector(img_path, H, S)
+            # cs.get_color_mask()
+            # cs.get_contour()
 
-    # ag = cs.ag
-    # contours = cs.contours
+    cs.get_color_mask()
+    cs.get_contour()
+    ag = cs.ag
+    contours = cs.contours
 
-    # img = cs.img0.convert("RGB")
-    # draw = ImageDraw.Draw(img)
-    # for c in contours:
-        # draw.rectangle(c, outline='red')
+    img = cs.img0.convert("RGB")
+    draw = ImageDraw.Draw(img)
+    for c in contours:
+        draw.rectangle(c, outline='red')
