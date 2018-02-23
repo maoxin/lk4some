@@ -37,10 +37,10 @@ def upload_img():
     img = request.files['search_area']
     chosen_color = request.form['color']
     if chosen_color == 'red':
-        # H = 0
-        # S = 80
-        H = 8
-        S = 63
+        H = 0
+        S = 80
+        # H = 8
+        # S = 63
     contours, img_height, img_width = lk4some_by_color(img, H, S)
     app.logger.debug(f"{contours}, {img_height}, {img_width}")
 
