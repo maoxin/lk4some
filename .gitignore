@@ -1,5 +1,5 @@
 img
 templates
 .DS_Store
-.log
+*.log
 __*__
