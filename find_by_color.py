@@ -1,4 +1,5 @@
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFilter
+from skimage import measure
 import numpy as np
 import logging
 
@@ -51,21 +52,29 @@ class ColorSelector(object):
         color_mask[ar_distance <= 16] = 255
         # 认为是36种提高容错率。。。。
 
+        img_color_mask = Image.fromarray(color_mask)
+        color_mask = np.array(self.connect_gap(img_color_mask))
+        # fill the gap causing by noise
+
         self.ar_distance = ar_distance
         self.color_mask = color_mask
 
         return 0
 
-    def get_contour(self):
-        # use AGNES
-        row, column = np.where(self.color_mask == 255)
-        data_set = np.vstack((row, column)).T
+    def get_contour(self, gap_ratio=4.24, min_pts=9):
+        # get connected region
+        blobs_labels = measure.label(self.color_mask, background=0)
+        Cs = []
+        for label in np.unique(blobs_labels):
+            if label != 0:
+                row, column = np.where(blobs_labels == label)
+                if len(row) >= min_pts:
+                    Cs.append(np.vstack((row, column)).T)
 
-        ag = AGNES(gap_ratio=4.24, min_pts=9)
-        ag.fit(data_set)
+        self.Cs = Cs
 
         contours = []
-        for C in ag.Cs:
+        for C in self.Cs:
             up = int(C[:, 0].min() * self.height_ratio)
             down = int(C[:, 0].max() * self.height_ratio)
             left = int(C[:, 1].min() * self.width_ratio)
@@ -74,84 +83,24 @@ class ColorSelector(object):
             contours.append([(left, up), (right, down)])
 
         self.contours = contours
-        self.ag = ag
 
         return 0
 
+    def connect_gap(self, img, round_max=1, round_min=1):
+        for i in range(round_max):
+            img = img.filter(ImageFilter.MaxFilter)
+        for i in range(round_min):
+            img = img.filter(ImageFilter.MinFilter)
 
-class AGNES(object):
-    def __init__(self, gap_ratio, min_pts):
-        self.gap_ratio = gap_ratio
-        self.min_pts = min_pts
-
-    def fit(self, X):
-        # X is a (N, 2) array
-        # a C is a (n, 2) array, Cs is the list of C
-        Cs = list(X.reshape((X.shape[0], 1, 2)))
-
-        x = X[:, 0]
-        y = X[:, 1]
-        M = np.sqrt((x[:, np.newaxis] - x)**2 + (y[:, np.newaxis] - y)**2)
-        np.fill_diagonal(M, np.inf)
-
-        min_distance = M.min()
-        min_distance_old = min_distance
-
-        while (min_distance / min_distance_old <= self.gap_ratio) and (M.shape[0] >= 2):
-            ar_indices_star = np.vstack(np.where(M == M.min())).T[0]
-            i_star = min(ar_indices_star)
-            j_star = max(ar_indices_star)
-
-            Cs[i_star] = np.vstack((Cs[i_star], Cs[j_star]))
-            Cs.pop(j_star)
-
-            M[i_star] = np.vstack((M[i_star], M[j_star])).min(axis=0)
-            M[:, i_star] = M[i_star]
-            M[i_star, i_star] = np.inf
-
-            M = np.delete(M, j_star, axis=0)
-            M = np.delete(M, j_star, axis=1)
-
-            min_distance = M.min()
-
-        Cs = sorted(Cs, key=lambda x: x.shape[0], reverse=True)
-
-        while Cs:
-            if Cs[-1].shape[0] < self.min_pts:
-                Cs.pop(-1)
-            else:
-                break
-
-        self.Cs = Cs
-
-        return 0
-
-    def min_distance_sets(self, C0, C1):
-        x_center0, y_center0 = C0.mean(axis=0)
-        x_center1, y_center1 = C1.mean(axis=0)
-        v_length = np.sqrt((x_center1 - x_center0)**2 + (y_center1 - y_center0)**2)
-        cos_theta = (x_center1 - x_center0) / v_length
-        sin_theta = (y_center1 - y_center0) / v_length
-
-        C0_new = self.rotate_axis(C0, cos_theta, sin_theta)
-        C1_new = self.rotate_axis(C1, cos_theta, sin_theta)
-
-        min_distance = np.sqrt(((C1_new[C1_new.argmin(axis=0)[0]] - C0_new[C0_new.argmax(axis=0)[0]])**2).sum())
-
-        return min_distance
-
-    def rotate_axis(self, C, cos_theta, sin_theta):
-        C_new = np.zeros(C.shape)
-        C_new[:, 0] = C[:, 0] * cos_theta + C[:, 1] * sin_theta
-        C_new[:, 1] = -C[:, 0] * sin_theta + C[:, 1] * cos_theta
-
-        return C_new
+        return img
 
 
 if __name__ == "__main__":
-    img_path = "img/IMG_7270.jpg"
-    cs = ColorSelector(img_path, 8, 63)
-    # cs = ColorSelector(img_path, 0, 80)
+    # img_path = "img/IMG_7270.jpg"
+    img_path = "img/IMG_7237.jpg"
+    img_path = "img/IMG_7271.jpg"
+    # cs = ColorSelector(img_path, 8, 63)
+    cs = ColorSelector(img_path, 0, 80)
 
     # for H in range(360):
         # for S in range(100):
@@ -160,8 +109,8 @@ if __name__ == "__main__":
             # cs.get_contour()
 
     cs.get_color_mask()
+    color_mask = cs.color_mask
     cs.get_contour()
-    ag = cs.ag
     contours = cs.contours
 
     img = cs.img0.convert("RGB")
