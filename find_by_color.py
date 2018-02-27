@@ -56,6 +56,9 @@ class ColorSelector(object):
             # d = 100 * 3∫ (π / 150) = 28
             threshold = 45
             # d = 100 * 3∫ (π / 36) = 45
+        elif mode == "HV":
+            ar_distance = self.distance_HV()
+            threshold = 7
         else:
             return 1
 
@@ -98,6 +101,17 @@ class ColorSelector(object):
         y1 = self.ar_s * np.sin(self.ar_h)
         z1 = self.ar_v
         ar_distance = np.sqrt((x1 - x0)**2 + (y1 - y0)**2 + (z1 - z0)**2)
+
+        ar_distance = ar_distance - ar_distance.min()
+
+        return ar_distance
+
+    def distance_HV(self):
+        x0 = self.chosen_s
+        x1 = self.ar_s
+        y0 = self.chosen_v
+        y1 = self.ar_v
+        ar_distance = np.sqrt((x1 - x0)**2 + (y1 - y0)**2)
 
         ar_distance = ar_distance - ar_distance.min()
 
