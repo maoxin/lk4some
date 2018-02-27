@@ -16,13 +16,17 @@ logger.addHandler(fh_debug)
 class ColorSelector(object):
     """return contour for chosen color"""
 
-    def __init__(self, img_path, chosen_h, chosen_s):
+    def __init__(self, img_path, chosen_h, chosen_s, chosen_v=100):
         self.img_path = img_path
         self.chosen_h = chosen_h / 360 * 2 * np.pi
+        self.chosen_v = chosen_v
         self.img0 = Image.open(self.img_path).convert(mode="HSV")
         logger.debug(f"image size {self.img0.size}")
 
-        self.img = self.img0.resize((128, int(128 * self.img0.height / self.img0.width)))
+        if self.img0.height > 128 and self.img0.width > 128:
+            self.img = self.img0.resize((128, int(128 * self.img0.height / self.img0.width)))
+        else:
+            self.img = self.img0.copy()
         self.height_ratio = self.img0.height / self.img.height
         self.width_ratio = self.img0.width / self.img.width
         self.ar_img = np.array(self.img)
@@ -36,21 +40,27 @@ class ColorSelector(object):
         # But the reality is that S can be greater tan V according to the wiki. So I give up
         self.chosen_s = chosen_s
 
-    def get_color_mask(self, s_ratio=0.7):
-        x0 = self.chosen_s * np.cos(self.chosen_h)
-        y0 = self.chosen_s * np.sin(self.chosen_h)
-        x1 = self.ar_s * np.cos(self.ar_h)
-        y1 = self.ar_s * np.sin(self.ar_h)
-        ar_distance = np.sqrt((x1 - x0)**2 + (y1 - y0)**2)
-
-        ar_distance = ar_distance - ar_distance.min()
-        ar_distance = ar_distance.astype("uint8")
+    def get_color_mask(self, mode="HS"):
+        if mode == "H":
+            ar_distance = self.distance_H()
+            threshold = 2 * np.pi / 36
+        elif mode == "HS":
+            ar_distance = self.distance_HS()
+            # threshold = 8
+            # 人眼能观察的颜色认为有150种，r = R / 150^0.5 = 100 * 0.08 = 8
+            threshold = 16
+            # 认为是36种提高容错率。。。。
+        elif mode == "HSV":
+            ar_distance = self.distance_HS()
+            # threshold = 28
+            # d = 100 * 3∫ (π / 150) = 28
+            threshold = 45
+            # d = 100 * 3∫ (π / 36) = 45
+        else:
+            return 1
 
         color_mask = np.zeros(ar_distance.shape, dtype="uint8")
-        # color_mask[ar_distance <= 8] = 255
-        # 人眼能观察的颜色认为有150种，r = R / 150^0.5 = 100 * 0.08 = 8
-        color_mask[ar_distance <= 16] = 255
-        # 认为是36种提高容错率。。。。
+        color_mask[ar_distance <= threshold] = 255
 
         img_color_mask = Image.fromarray(color_mask)
         color_mask = np.array(self.connect_gap(img_color_mask))
@@ -60,6 +70,38 @@ class ColorSelector(object):
         self.color_mask = color_mask
 
         return 0
+
+    def distance_H(self):
+        ar_distance = abs(self.ar_h - self.chosen_h)
+        ar_distance[ar_distance > np.pi] = 2 * np.pi - ar_distance[ar_distance > np.pi]
+
+        ar_distance = ar_distance - ar_distance.min()
+
+        return ar_distance
+
+    def distance_HS(self):
+        x0 = self.chosen_s * np.cos(self.chosen_h)
+        y0 = self.chosen_s * np.sin(self.chosen_h)
+        x1 = self.ar_s * np.cos(self.ar_h)
+        y1 = self.ar_s * np.sin(self.ar_h)
+        ar_distance = np.sqrt((x1 - x0)**2 + (y1 - y0)**2)
+
+        ar_distance = ar_distance - ar_distance.min()
+
+        return ar_distance
+
+    def distance_HSV(self):
+        x0 = self.chosen_s * np.cos(self.chosen_h)
+        y0 = self.chosen_s * np.sin(self.chosen_h)
+        z0 = self.chosen_v
+        x1 = self.ar_s * np.cos(self.ar_h)
+        y1 = self.ar_s * np.sin(self.ar_h)
+        z1 = self.ar_v
+        ar_distance = np.sqrt((x1 - x0)**2 + (y1 - y0)**2 + (z1 - z0)**2)
+
+        ar_distance = ar_distance - ar_distance.min()
+
+        return ar_distance
 
     def get_contour(self, gap_ratio=4.24, min_pts=9):
         # get connected region
@@ -98,7 +140,7 @@ class ColorSelector(object):
 if __name__ == "__main__":
     # img_path = "img/IMG_7270.jpg"
     img_path = "img/IMG_7237.jpg"
-    img_path = "img/IMG_7271.jpg"
+    # img_path = "img/IMG_7271.jpg"
     # cs = ColorSelector(img_path, 8, 63)
     cs = ColorSelector(img_path, 0, 80)
 
@@ -108,7 +150,7 @@ if __name__ == "__main__":
             # cs.get_color_mask()
             # cs.get_contour()
 
-    cs.get_color_mask()
+    cs.get_color_mask(mode="HS")
     color_mask = cs.color_mask
     cs.get_contour()
     contours = cs.contours
