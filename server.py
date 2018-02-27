@@ -52,10 +52,7 @@ def upload_img():
         mode = "HV"
     elif chosen_color in color_table['normal']:
         H, S, V = color_table['normal'][chosen_color]
-        if V < 100:
-            mode = "HSV"
-        else:
-            mode = "HS"
+        mode = "HS"
 
     app.logger.debug(f"color: {chosen_color}, mode: {mode}")
     contours, img_height, img_width = lk4some_by_color(img, H, S, V, mode)
