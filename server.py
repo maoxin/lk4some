@@ -53,7 +53,13 @@ def upload_img():
 
     if chosen_color in color_table['special'].keys():
         H, S, V = color_table['special'][chosen_color]
-        mode = "HV"
+        if chosen_color == "黑":
+            # black is only controlled by V
+            mode = "V"
+        else:
+            # maybe the grey should be isolated
+            #  it's detection should focus on S, and the V should be constraint
+            mode = "HV"
     elif chosen_color in color_table['normal']:
         H, S, V = color_table['normal'][chosen_color]
         mode = "HS"

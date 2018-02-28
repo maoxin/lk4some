@@ -59,6 +59,9 @@ class ColorSelector(object):
         elif mode == "HV":
             ar_distance = self.distance_HV()
             threshold = 7
+        elif mode == "V":
+            ar_distance = self.distance_V()
+            threshold = 4
         else:
             return 1
 
@@ -117,6 +120,13 @@ class ColorSelector(object):
 
         return ar_distance
 
+    def distance_V(self):
+        ar_distance = abs(self.ar_v - self.chosen_v)
+
+        ar_distance = ar_distance - ar_distance.min()
+
+        return ar_distance
+
     def get_contour(self, gap_ratio=4.24, min_pts=9):
         # get connected region
         blobs_labels = measure.label(self.color_mask, background=0)
@@ -153,8 +163,9 @@ class ColorSelector(object):
 
 if __name__ == "__main__":
     # img_path = "img/IMG_7270.jpg"
-    img_path = "img/IMG_7237.jpg"
+    # img_path = "img/IMG_7237.jpg"
     # img_path = "img/IMG_7271.jpg"
+    img_path = "img/IMG_7327.jpg"
     # cs = ColorSelector(img_path, 8, 63)
     cs = ColorSelector(img_path, 0, 80)
 
