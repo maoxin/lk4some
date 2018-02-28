@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from werkzeug.utils import secure_filename
-import logging, os
+import logging, os, time
 from yaml import load
 from find_by_color import ColorSelector
 
@@ -19,13 +19,17 @@ with open('color_table.yml') as f:
 
 def lk4some_by_color(img, H, S, V, mode="HS"):
     app.logger.debug('searching begin')
+    t0 = time.time()
+
     cs = ColorSelector(img, H, S, V)
     cs.get_color_mask(mode=mode)
     cs.get_contour()
     contours = cs.contours
     img_height = cs.img0.height
     img_width = cs.img0.width
-    app.logger.debug('searching end')
+
+    t1 = time.time()
+    app.logger.debug(f'searching end, cost {t1 - t0}s')
 
     return contours, img_height, img_width
 
