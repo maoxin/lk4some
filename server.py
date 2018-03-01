@@ -17,11 +17,11 @@ with open('color_table.yml') as f:
     color_table = load(f)
 
 
-def lk4some_by_color(img, H, S, V, mode="HS"):
+def lk4some_by_color(img, H_range, S_range, V_range, mode="HS"):
     app.logger.debug('searching begin')
     t0 = time.time()
 
-    cs = ColorSelector(img, H, S, V)
+    cs = ColorSelector(img, H_range, S_range, V_range)
     cs.get_color_mask(mode=mode)
     cs.get_contour()
     contours = cs.contours
@@ -51,21 +51,20 @@ def upload_img():
     else:
         pass
 
-    if chosen_color in color_table['special'].keys():
-        H, S, V = color_table['special'][chosen_color]
+    H_range = color_table['color'][chosen_color].get("H")
+    S_range = color_table['color'][chosen_color].get("S")
+    V_range = color_table['color'][chosen_color].get("V")
+
+    if chosen_color in color_table['special_color_list']:
         if chosen_color == "黑":
-            # black is only controlled by V
-            mode = "V"
-        else:
-            # maybe the grey should be isolated
-            #  it's detection should focus on S, and the V should be constraint
-            mode = "HV"
-    elif chosen_color in color_table['normal']:
-        H, S, V = color_table['normal'][chosen_color]
-        mode = "HS"
+            mode = "black"
+        elif chosen_color in ["白", "灰"]:
+            mode = "white_or_grey"
+    elif chosen_color in color_table['normal_color_list']:
+        mode = "normal"
 
     app.logger.debug(f"color: {chosen_color}, mode: {mode}")
-    contours, img_height, img_width = lk4some_by_color(img, H, S, V, mode)
+    contours, img_height, img_width = lk4some_by_color(img, H_range, S_range, V_range, mode)
     app.logger.debug(f"{contours}, {img_height}, {img_width}")
 
     return jsonify({
