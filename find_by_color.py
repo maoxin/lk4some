@@ -2,6 +2,7 @@ from PIL import Image, ImageDraw, ImageFilter
 from skimage import measure
 import numpy as np
 import logging
+from yaml import load
 
 
 fh_debug = logging.FileHandler("debug.log")
@@ -12,19 +13,32 @@ logger = logging.getLogger('find_by_color')
 logger.setLevel(logging.DEBUG)
 logger.addHandler(fh_debug)
 
+with open('color_table.yml') as f:
+    color_table = load(f)
+
 
 class ColorSelector(object):
     """return contour for chosen color"""
 
-    def __init__(self, img_path, chosen_h, chosen_s, chosen_v=100):
+    def __init__(self, img_path, chosen_h_range, chosen_s_range, chosen_v_range):
         self.img_path = img_path
-        self.chosen_h = chosen_h / 360 * 2 * np.pi
-        self.chosen_v = chosen_v
+        if chosen_h_range:
+            self.chosen_h_upper = chosen_h_range[1] / 360 * 2 * np.pi
+            self.chosen_h_lower = chosen_h_range[0] / 360 * 2 * np.pi
+        if chosen_v_range:
+            self.chosen_v_upper = chosen_v_range[1]
+            self.chosen_v_lower = chosen_v_range[0]
+        if chosen_s_range:
+            self.chosen_s_upper = chosen_s_range[1]
+            self.chosen_s_lower = chosen_s_range[0]
+
         self.img0 = Image.open(self.img_path).convert(mode="HSV")
         logger.debug(f"image size {self.img0.size}")
 
         if self.img0.height > 128 and self.img0.width > 128:
             self.img = self.img0.resize((128, int(128 * self.img0.height / self.img0.width)))
+            # self.img = self.img0.resize((256, int(256 * self.img0.height / self.img0.width)))
+            # self.img = self.img0.copy()
         else:
             self.img = self.img0.copy()
         self.height_ratio = self.img0.height / self.img.height
@@ -34,45 +48,35 @@ class ColorSelector(object):
         self.ar_s = self.ar_img[:, :, 1] / 255 * 100
         self.ar_v = self.ar_img[:, :, 2] / 255 * 100
 
-        # self.chosen_s = self.ar_v.copy()
-        # self.chosen_s[self.ar_v > chosen_s] = chosen_s
-        # S cannot be greater than V (inverted cone space of HSV), so I use the method above.method
-        # But the reality is that S can be greater tan V according to the wiki. So I give up
-        self.chosen_s = chosen_s
-
     def get_color_mask(self, mode="HS"):
-        if mode == "H":
-            ar_distance = self.distance_H()
-            threshold = 2 * np.pi / 36
-        elif mode == "HS":
-            ar_distance = self.distance_HS()
-            # threshold = 8
-            # 人眼能观察的颜色认为有150种，r = R / 150^0.5 = 100 * 0.08 = 8
-            threshold = 16
-            # 认为是36种提高容错率。。。。
-        elif mode == "HSV":
-            ar_distance = self.distance_HS()
-            # threshold = 28
-            # d = 100 * 3∫ (π / 150) = 28
-            threshold = 45
-            # d = 100 * 3∫ (π / 36) = 45
-        elif mode == "HV":
-            ar_distance = self.distance_HV()
-            threshold = 7
-        elif mode == "V":
-            ar_distance = self.distance_V()
-            threshold = 4
+        if mode == "normal":
+            if self.chosen_h_lower > self.chosen_h_upper:
+                h_mask = (self.ar_h <= self.chosen_h_upper) | (self.ar_h >= self.chosen_h_lower)
+            else:
+                h_mask = (self.ar_h <= self.chosen_h_upper) & (self.ar_h >= self.chosen_h_lower)
+            s_mask = (self.ar_s <= self.chosen_s_upper) & (self.ar_s >= self.chosen_s_lower)
+            v_mask = (self.ar_v <= self.chosen_v_upper) & (self.ar_s >= self.chosen_v_lower)
+
+            color_mask = (h_mask & s_mask & v_mask).astype('uint8')
+
+        elif mode == "black":
+            v_mask = (self.ar_v <= self.chosen_v_upper) & (self.ar_v >= self.chosen_v_lower)
+
+            color_mask = v_mask.astype('uint8')
+
+        elif mode == "white_or_grey":
+            v_mask = (self.ar_v <= self.chosen_v_upper) & (self.ar_v >= self.chosen_v_lower)
+            s_mask = (self.ar_s <= self.chosen_s_upper) & (self.ar_s >= self.chosen_s_lower)
+
+            color_mask = (v_mask & s_mask).astype('uint8')
+
         else:
             return 1
-
-        color_mask = np.zeros(ar_distance.shape, dtype="uint8")
-        color_mask[ar_distance <= threshold] = 255
 
         img_color_mask = Image.fromarray(color_mask)
         color_mask = np.array(self.connect_gap(img_color_mask))
         # fill the gap causing by noise
 
-        self.ar_distance = ar_distance
         self.color_mask = color_mask
 
         return 0
