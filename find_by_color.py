@@ -2,6 +2,7 @@ from PIL import Image, ImageDraw, ImageFilter
 from skimage import measure
 import numpy as np
 import logging
+import os
 from yaml import load
 
 
@@ -73,8 +74,8 @@ class ColorSelector(object):
         else:
             return 1
 
-        img_color_mask = Image.fromarray(color_mask)
-        color_mask = np.array(self.connect_gap(img_color_mask))
+        # img_color_mask = Image.fromarray(color_mask)
+        # color_mask = np.array(self.connect_gap(img_color_mask))
         # fill the gap causing by noise
 
         self.color_mask = color_mask
@@ -131,7 +132,7 @@ class ColorSelector(object):
 
         return ar_distance
 
-    def get_contour(self, gap_ratio=4.24, min_pts=9):
+    def get_contour(self, min_pts=12):
         # get connected region
         blobs_labels = measure.label(self.color_mask, background=0)
         Cs = []
@@ -166,25 +167,41 @@ class ColorSelector(object):
 
 
 if __name__ == "__main__":
-    # img_path = "img/IMG_7270.jpg"
-    # img_path = "img/IMG_7237.jpg"
-    # img_path = "img/IMG_7271.jpg"
-    img_path = "img/IMG_7327.jpg"
-    # cs = ColorSelector(img_path, 8, 63)
-    cs = ColorSelector(img_path, 0, 80)
+    def draw_rec(chosen_color, img_path):
+        H_range = color_table['color'][chosen_color].get("H")
+        S_range = color_table['color'][chosen_color].get("S")
+        V_range = color_table['color'][chosen_color].get("V")
 
-    # for H in range(360):
-        # for S in range(100):
-            # cs = ColorSelector(img_path, H, S)
-            # cs.get_color_mask()
-            # cs.get_contour()
+        if chosen_color in color_table['special_color_list']:
+            if chosen_color == "黑":
+                mode = "black"
+            elif chosen_color in ["白", "灰"]:
+                mode = "white_or_grey"
+        elif chosen_color in color_table['normal_color_list']:
+            mode = "normal"
 
-    cs.get_color_mask(mode="HS")
-    color_mask = cs.color_mask
-    cs.get_contour()
-    contours = cs.contours
+        cs = ColorSelector(img_path, H_range, S_range, V_range)
+        cs.get_color_mask(mode=mode)
+        cs.get_contour()
+        contours = cs.contours
 
-    img = cs.img0.convert("RGB")
-    draw = ImageDraw.Draw(img)
-    for c in contours:
-        draw.rectangle(c, outline='red')
+        img = cs.img0.convert("RGB")
+        draw = ImageDraw.Draw(img)
+        for c in contours:
+            draw.rectangle(c, outline='red')
+
+        return img
+
+    real_img_fn = os.listdir("img/现实组")
+    art_img_fn = os.listdir("img/艺术组")
+    colors = color_table['color_list']
+
+    for fn in real_img_fn:
+        for cl in colors:
+            img = draw_rec(cl, f'img/现实组/{fn}')
+            img.save(f"img/结果/现实组/{cl}_{fn}")
+
+    for fn in art_img_fn:
+        for cl in colors:
+            img = draw_rec(cl, f'img/艺术组/{fn}')
+            img.save(f"img/结果/艺术组/{cl}_{fn}")
