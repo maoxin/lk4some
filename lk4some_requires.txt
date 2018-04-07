@@ -1,5 +1,0 @@
-numpy
-Pillow
-Flask
-scikit-image
-PyYAML
