@@ -5,3 +5,4 @@ templates
 *.log
 __*__
 #*#
+.vscode

@@ -13,6 +13,11 @@ pyyaml = "*"
 pillow = "*"
 scikit-image = "*"
 numpy = "*"
+visdom = "*"
+ipython = "*"
+matplotlib = "*"
+cython = "*"
+pydensecrf = "*"
 
 
 [dev-packages]
