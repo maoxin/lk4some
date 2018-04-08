@@ -4,7 +4,7 @@ import numpy as np
 import logging
 import yaml
 import visdom
-import pydensecrf.densecrf as dcrf
+# import pydensecrf.densecrf as dcrf
 
 
 fh_debug = logging.FileHandler("debug.log")
@@ -80,17 +80,19 @@ class ColorSelector(object):
         self.color_softmax_channels = np.exp(1/(self.color_distance_channels + epsilon))
         self.color_softmax_channels = self.color_softmax_channels / self.color_softmax_channels.sum(0)
 
-        nlabels = len(self.color_table['color_point'])
-        d = dcrf.DenseCRF2D(self.img.width, self.img.height, nlabels)
-        U = -np.log(self.color_softmax_channels).astype('float32').reshape((nlabels, -1))
-        d.setUnaryEnergy(U)
-        im = np.array(self.img.convert(mode="RGB"))
+        # nlabels = len(self.color_table['color_point'])
+        # d = dcrf.DenseCRF2D(self.img.width, self.img.height, nlabels)
+        # U = -np.log(self.color_softmax_channels).astype('float32').reshape((nlabels, -1))
+        # d.setUnaryEnergy(U)
+        # im = np.array(self.img.convert(mode="RGB"))
 
-        # d.addPairwiseGaussian(sxy=20, compat=3)
-        d.addPairwiseBilateral(sxy=8, srgb=3, rgbim=im, compat=10)
+        # # d.addPairwiseGaussian(sxy=20, compat=3)
+        # d.addPairwiseBilateral(sxy=8, srgb=3, rgbim=im, compat=10)
 
-        Q = d.inference(20)
-        self.color_crf_channels = np.array(Q).reshape((nlabels, self.img.height, self.img.width))
+        # Q = d.inference(20)
+        # self.color_crf_channels = np.array(Q).reshape((nlabels, self.img.height, self.img.width))
+
+        self.color_crf_channels = self.color_softmax_channels.copy()
         
         return 0
 
