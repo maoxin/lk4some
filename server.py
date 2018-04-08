@@ -17,16 +17,19 @@ with open('color_table.yml') as f:
     color_table = load(f)
 
 
-def lk4some_by_color(img, H_range, S_range, V_range, mode="HS"):
+def lk4some_by_color(img_path, chosen_color_name):
     app.logger.debug('searching begin')
     t0 = time.time()
 
-    cs = ColorSelector(img, H_range, S_range, V_range)
-    cs.get_color_mask(mode=mode)
+    cs = ColorSelector(img_path, chosen_color_name)
+    cs.get_color_distance_channels()
+    cs.get_color_prob_channels()
+    cs.classify()
+    cs.get_chosen_color_mask()
     cs.get_contour()
     contours = cs.contours
-    img_height = cs.img0.height
-    img_width = cs.img0.width
+    img_height = cs.init_img.height
+    img_width = cs.init_img.width
 
     t1 = time.time()
     app.logger.debug(f'searching end, cost {t1 - t0}s')
@@ -42,29 +45,11 @@ def index():
 
 @app.route('/upload', methods=['POST'])
 def upload_img():
-    img = request.files['search_area']
-    chosen_color = request.form['color']
+    img_path = request.files['search_area']
+    chosen_color_name = request.form['color']
 
-    chosen_color = chosen_color.replace("色", "")
-    if chosen_color not in color_table['color_list']:
-        chosen_color = color_table['translate'][chosen_color]
-    else:
-        pass
-
-    H_range = color_table['color'][chosen_color].get("H")
-    S_range = color_table['color'][chosen_color].get("S")
-    V_range = color_table['color'][chosen_color].get("V")
-
-    if chosen_color in color_table['special_color_list']:
-        if chosen_color == "黑":
-            mode = "black"
-        elif chosen_color in ["白", "灰"]:
-            mode = "white_or_grey"
-    elif chosen_color in color_table['normal_color_list']:
-        mode = "normal"
-
-    app.logger.debug(f"color: {chosen_color}, mode: {mode}")
-    contours, img_height, img_width = lk4some_by_color(img, H_range, S_range, V_range, mode)
+    app.logger.debug(f"color_name: {chosen_color_name}")
+    contours, img_height, img_width = lk4some_by_color(img_path, chosen_color_name)
     app.logger.debug(f"{contours}, {img_height}, {img_width}")
 
     return jsonify({
