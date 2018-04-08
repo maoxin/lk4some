@@ -16,7 +16,7 @@ logger.setLevel(logging.DEBUG)
 logger.addHandler(fh_debug)
 
 with open('color_table.yml') as f:
-    color_table = load(f)
+    color_table = yaml.load(f)
 
 
 class ColorSelector(object):
