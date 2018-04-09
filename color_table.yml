@@ -37,6 +37,119 @@ translate:
     橙: 橙/橘黄
     橘黄: 橙/橘黄
 
+    # 红色相近
+    猩红: 红
+    scarlet: 红
+    朱红: 红
+    vermilion: 红
+    深茜红: 红
+    alizarin crimson: 红
+    鲜红: 红
+    strong red: 红
+    褐: 红
+    brown: 红
+    砖红: 红
+    fire brick: 红
+    栗: 红
+    maroon: 红
+    暗红: 红
+    dark red: 红
+    绯红: 红
+    crimson: 红
+    粉红: 红
+    pink: 红
+
+    # 橙色相近
+    琥珀: 橙/橘黄
+    amber: 橙/橘黄
+    金: 橙/橘黄
+    gold: 橙/橘黄
+    
+    # 黄色相近，柠檬绿在HSB上和HSV上很不一样，在HSB上只能认为是黄色的一种
+    
+
+    # 绿色相近
+    黄绿: 绿
+    bright green: 绿
+    苹果绿: 绿
+    pple Green: 绿
+    柠檬绿: 绿
+    lime: 绿
+    暗绿: 绿
+    dark green: 绿
+    碧绿: 绿
+    emerald: 绿
+
+    # 蓝色相近
+    蔚蓝: 蓝
+    azure: 蓝
+    蓝绿: 蓝
+    aquamarine: 蓝
+    浅蓝: 蓝
+    baby blue: 蓝
+    矢车菊蓝: 蓝
+    cornflower blue: 蓝
+    粉末蓝: 蓝
+    powder blue: 蓝
+    皇室蓝: 蓝
+    royal blue: 蓝
+    普鲁士蓝: 蓝
+    prussian blue: 蓝
+    午夜蓝: 蓝
+    midnight blue: 蓝
+    天青蓝: 蓝
+    cerulean blue: 蓝
+    钴蓝: 蓝
+    cobalt blue: 蓝
+    道奇蓝: 蓝
+    dodger blue: 蓝
+    国际奇连蓝: 蓝
+    international klein blue: 蓝
+    海军蓝: 蓝
+    navy blue: 蓝
+    白牛仔布: 蓝
+    pale Denim: 蓝
+    青玉: 蓝
+    sapphire: 蓝
+
+    # 青色相近
+    绿松: 青
+    turquoise: 青
+    水蓝: 青
+    aqua blue: 青
+
+    # 紫色相似
+    紫罗兰: 紫
+    violet: 紫
+    蓝紫: 紫
+    blue violet: 紫
+    靛: 紫
+    indigo: 紫
+    亮紫: 紫
+    light violet: 紫
+
+    # 灰色相近
+    银: 灰
+    silver: 灰
+    亮灰: 灰
+    light gray: 灰
+    暗灰: 灰
+    dark gray: 灰
+
+    # 白色相近
+    白烟: 白
+    white smoke: 白
+    雪: 白
+    snow: 白
+
+    # 棕色相近
+    桃: 棕
+    peach: 棕
+
+
+
+
+
 color_point:
     紫: ['HS', 303, 44, 59]
     洋红: ['HS', 300, 50, 100]
