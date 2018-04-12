@@ -47,23 +47,12 @@ def index():
 @app.route('/upload', methods=['POST'])
 def upload_img():
     img_path = request.files['search_area']
-    filename = secure_filename(img_path.filename)
-    img_path.save(os.path.join('upload_files', filename))
     
     chosen_color_name = request.form['color']
 
     app.logger.debug(f"color_name: {chosen_color_name}")
     contours, img_height, img_width = lk4some_by_color(img_path, chosen_color_name)
     app.logger.debug(f"{contours}, {img_height}, {img_width}")
-
-    process_info = {
-        "filename": filename,
-        "contours": contours,
-        "color_name": chosen_color_name,
-    }
-
-    with open('process_info.json', 'a') as f:
-        f.write(f"{json.dumps(process_info)}\n")
 
     return jsonify({
                    "contours": contours,
