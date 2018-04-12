@@ -26,7 +26,7 @@ class ColorSelector(object):
         # load color table, parse chosen color
         with open('color_table.yml', 'r') as f:
             self.color_table = yaml.load(f.read())
-        self.chosen_color_name = chosen_color_name.replace("色", "")
+        self.chosen_color_name = chosen_color_name.replace("色", "").lower()
         if self.chosen_color_name not in self.color_table['color_list']:
             try:
                 self.chosen_color_name = self.color_table['translate'][self.chosen_color_name]
