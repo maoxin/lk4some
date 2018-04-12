@@ -6,3 +6,5 @@ templates
 __*__
 #*#
 .vscode
+upload_files
+process_info.json
